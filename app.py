@@ -23,9 +23,9 @@ def load_data():
         st.stop()
 
     # 3. 必要な列（カラム）のチェック
-    required_batter = ["選手名", "球団", "ポジション", "投打", "試合数", "打席数", "打率", "本塁打", "打点", "盗塁", "OPS"]
-    required_pitcher = ["選手名", "球団", "ポジション", "投打", "登板数", "投球回", "防御率", "勝利", "奪三振", "勝率", "WHIP"]
-    
+    required_batter = ["選手名", "球団", "試合数", "打席数", "打率", "本塁打", "打点", "盗塁", "OPS"]
+    required_pitcher = ["選手名", "球団", "登板数", "投球回", "防御率", "勝利", "奪三振", "勝率", "WHIP"]
+
     missing_b = [col for col in required_batter if col not in dfs["野手"].columns]
     missing_p = [col for col in required_pitcher if col not in dfs["投手"].columns]
     
