@@ -764,9 +764,6 @@ def show_start_page():
             if "パ" in scopes:
                 allowed_teams.extend(pacific)
             
-            if (not allowed_teams) or ("全て" in scopes):
-                allowed_teams = central + pacific
-
             # -------------------------------------------------
             # 投手・野手の判定
             # -------------------------------------------------
@@ -776,9 +773,6 @@ def show_start_page():
                 allowed_roles.append("野手")
             if "投手" in scopes:
                 allowed_roles.append("投手")
-            
-            if (not allowed_roles) or ("全て" in scopes):
-                allowed_roles = ["野手", "投手"]
 
             # -------------------------------------------------
             # 出題プール生成
