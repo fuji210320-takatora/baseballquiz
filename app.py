@@ -33,21 +33,20 @@ def load_data():
         )
         st.stop()
 
-    # -----------------------------------------------------
+    # =====================================================
     # シート確認
-    # -----------------------------------------------------
+    # =====================================================
 
     if "野手" not in dfs or "投手" not in dfs:
-
         st.error(
             "🚨 【エラー】Excelファイル内に"
             "「野手」と「投手」のシートが必要です。"
         )
         st.stop()
 
-    # -----------------------------------------------------
+    # =====================================================
     # 必要列
-    # -----------------------------------------------------
+    # =====================================================
 
     required_batter = [
         "選手名",
@@ -58,6 +57,7 @@ def load_data():
         "本塁打",
         "打点",
         "盗塁",
+        "出塁率",
         "OPS"
     ]
 
@@ -87,7 +87,6 @@ def load_data():
     ]
 
     if missing_b:
-
         st.error(
             "🚨 「野手」シートに以下の列がありません: "
             + ", ".join(missing_b)
@@ -95,16 +94,15 @@ def load_data():
         st.stop()
 
     if missing_p:
-
         st.error(
             "🚨 「投手」シートに以下の列がありません: "
             + ", ".join(missing_p)
         )
         st.stop()
 
-    # -----------------------------------------------------
+    # =====================================================
     # 数値化
-    # -----------------------------------------------------
+    # =====================================================
 
     batter_numeric = [
         "試合数",
@@ -125,25 +123,22 @@ def load_data():
     ]
 
     for col in batter_numeric:
-
         dfs["野手"][col] = pd.to_numeric(
             dfs["野手"][col],
             errors="coerce"
         ).fillna(0)
 
     for col in pitcher_numeric:
-
         dfs["投手"][col] = pd.to_numeric(
             dfs["投手"][col],
             errors="coerce"
         ).fillna(0)
 
-    # -----------------------------------------------------
-    # 空欄
-    # -----------------------------------------------------
+    # =====================================================
+    # 空欄処理
+    # =====================================================
 
     for sheet in dfs:
-
         dfs[sheet] = dfs[sheet].fillna("-")
 
     return dfs
@@ -174,7 +169,6 @@ def get_all_player_names():
                 and name != "-"
                 and name not in names
             ):
-
                 names.append(name)
 
     return sorted(names)
@@ -204,6 +198,76 @@ def normalize_name(text):
     )
 
     return text.strip()
+
+
+# =========================================================
+# 表示用フォーマット
+# =========================================================
+
+def format_integer(value):
+
+    """
+    整数系。
+    25.0 → 25
+    0.0 → 0
+    """
+
+    if value is None:
+        return "-"
+
+    if str(value) == "-":
+        return "-"
+
+    try:
+        return str(int(float(value)))
+    except Exception:
+        return str(value)
+
+
+def format_rate(value):
+
+    """
+    打率・出塁率・OPS用。
+    0.6 → 0.600
+    0.600 → 0.600
+    """
+
+    if value is None:
+        return "-"
+
+    if str(value) == "-":
+        return "-"
+
+    try:
+        return f"{float(value):.3f}"
+    except Exception:
+        return str(value)
+
+
+def format_decimal(value):
+
+    """
+    防御率・投球回など。
+    Excelの値をそのまま基本表示する。
+    """
+
+    if value is None:
+        return "-"
+
+    if str(value) == "-":
+        return "-"
+
+    try:
+
+        number = float(value)
+
+        if number.is_integer():
+            return str(int(number))
+
+        return str(number)
+
+    except Exception:
+        return str(value)
 
 
 # =========================================================
@@ -292,31 +356,19 @@ st.markdown(
 
 
 # =========================================================
-# 表示用
-# =========================================================
-
-def display_value(value):
-
-    if value is None:
-        return "-"
-
-    if str(value) == "-":
-        return "-"
-
-    return str(value)
-
-
-# =========================================================
 # 成績カード
-#
-# ★ st.components.v1.html を使用
-# ★ st.markdown では描画しない
 # =========================================================
 
 def show_stats_card(player):
 
     # =====================================================
     # 投手
+    #
+    # 上段
+    # 登板数 / 投球回 / 防御率 / 奪三振
+    #
+    # 下段
+    # 勝利 / 敗北 / セーブ / HP
     # =====================================================
 
     if player["type"] == "投手":
@@ -324,31 +376,35 @@ def show_stats_card(player):
         stats = [
             (
                 "登板数",
-                f"{display_value(player['登板数'])}試合"
+                f"{format_integer(player['登板数'])}試合"
+            ),
+            (
+                "投球回",
+                format_decimal(player["投球回"])
             ),
             (
                 "防御率",
-                display_value(player["防御率"])
-            ),
-            (
-                "勝利",
-                f"{display_value(player['勝利'])}勝"
-            ),
-            (
-                "敗北",
-                f"{display_value(player['敗北'])}敗"
-            ),
-            (
-                "セーブ",
-                display_value(player["セーブ"])
-            ),
-            (
-                "HP",
-                display_value(player["HP"])
+                format_decimal(player["防御率"])
             ),
             (
                 "奪三振",
-                display_value(player["奪三振"])
+                format_integer(player["奪三振"])
+            ),
+            (
+                "勝利",
+                f"{format_integer(player['勝利'])}勝"
+            ),
+            (
+                "敗北",
+                f"{format_integer(player['敗北'])}敗"
+            ),
+            (
+                "セーブ",
+                format_integer(player["セーブ"])
+            ),
+            (
+                "HP",
+                format_integer(player["HP"])
             )
         ]
 
@@ -356,6 +412,12 @@ def show_stats_card(player):
 
     # =====================================================
     # 野手
+    #
+    # 上段
+    # 試合数 / 打率 / 本塁打 / 打点
+    #
+    # 下段
+    # 打席数 / 出塁率 / 盗塁 / OPS
     # =====================================================
 
     else:
@@ -363,46 +425,51 @@ def show_stats_card(player):
         stats = [
             (
                 "試合数",
-                f"{display_value(player['試合数'])}試合"
-            ),
-            (
-                "打席数",
-                display_value(player["打席数"])
+                f"{format_integer(player['試合数'])}試合"
             ),
             (
                 "打率",
-                display_value(player["打率"])
+                format_rate(player["打率"])
             ),
             (
                 "本塁打",
-                f"{display_value(player['本塁打'])}本"
+                f"{format_integer(player['本塁打'])}本"
             ),
             (
                 "打点",
-                display_value(player["打点"])
+                format_integer(player["打点"])
+            ),
+            (
+                "打席数",
+                format_integer(player["打席数"])
+            ),
+            (
+                "出塁率",
+                format_rate(player["出塁率"])
             ),
             (
                 "盗塁",
-                display_value(player["盗塁"])
+                format_integer(player["盗塁"])
             ),
             (
                 "OPS",
-                display_value(player["OPS"])
+                format_rate(player["OPS"])
             )
         ]
 
         title = "野手成績"
 
     # =====================================================
-    # 上段3項目
+    # 上段4つ
     # =====================================================
 
     top_html = ""
 
-    for label, value in stats[:3]:
+    for label, value in stats[:4]:
 
         top_html += f"""
         <div class="stat-item">
+
             <div class="stat-label">
                 {label}
             </div>
@@ -410,19 +477,21 @@ def show_stats_card(player):
             <div class="stat-value">
                 {value}
             </div>
+
         </div>
         """
 
     # =====================================================
-    # 下段4項目
+    # 下段4つ
     # =====================================================
 
     bottom_html = ""
 
-    for label, value in stats[3:]:
+    for label, value in stats[4:]:
 
         bottom_html += f"""
         <div class="stat-item">
+
             <div class="stat-label">
                 {label}
             </div>
@@ -430,6 +499,7 @@ def show_stats_card(player):
             <div class="stat-value-small">
                 {value}
             </div>
+
         </div>
         """
 
@@ -457,6 +527,7 @@ def show_stats_card(player):
                 margin: 0;
                 padding: 0;
                 background: transparent;
+
                 font-family:
                     -apple-system,
                     BlinkMacSystemFont,
@@ -471,7 +542,9 @@ def show_stats_card(player):
 
                 background: #ffffff;
 
-                border: 2px solid #d6d3cc;
+                border:
+                    2px solid
+                    #d6d3cc;
 
                 border-radius: 7px;
 
@@ -480,8 +553,6 @@ def show_stats_card(player):
                     42px
                     38px
                     42px;
-
-                margin: 0;
 
             }}
 
@@ -532,18 +603,26 @@ def show_stats_card(player):
 
             }}
 
+            /* ==============================
+               上段
+               ============================== */
+
             .stats-grid-top {{
 
                 display: grid;
 
                 grid-template-columns:
-                    repeat(3, 1fr);
+                    repeat(4, 1fr);
 
-                gap: 35px;
+                gap: 20px;
 
                 margin-bottom: 42px;
 
             }}
+
+            /* ==============================
+               下段
+               ============================== */
 
             .stats-grid-bottom {{
 
@@ -552,7 +631,7 @@ def show_stats_card(player):
                 grid-template-columns:
                     repeat(4, 1fr);
 
-                gap: 25px;
+                gap: 20px;
 
             }}
 
@@ -568,7 +647,7 @@ def show_stats_card(player):
 
                 color: #70757a;
 
-                font-size: 19px;
+                font-size: 18px;
 
                 font-weight: 700;
 
@@ -582,7 +661,7 @@ def show_stats_card(player):
 
                 color: #171717;
 
-                font-size: 42px;
+                font-size: 35px;
 
                 font-weight: 800;
 
@@ -596,7 +675,7 @@ def show_stats_card(player):
 
                 color: #171717;
 
-                font-size: 37px;
+                font-size: 32px;
 
                 font-weight: 800;
 
@@ -606,10 +685,9 @@ def show_stats_card(player):
 
             }}
 
-
-            /* ==========================================
+            /* ==============================
                スマホ
-               ========================================== */
+               ============================== */
 
             @media (max-width: 700px) {{
 
@@ -617,11 +695,9 @@ def show_stats_card(player):
 
                     padding:
                         25px
-                        12px
+                        10px
                         30px
-                        12px;
-
-                    border-radius: 7px;
+                        10px;
 
                 }}
 
@@ -633,13 +709,13 @@ def show_stats_card(player):
 
                 .stats-title {{
 
-                    font-size: 23px;
+                    font-size: 22px;
 
                 }}
 
                 .stats-year {{
 
-                    font-size: 19px;
+                    font-size: 18px;
 
                 }}
 
@@ -647,13 +723,16 @@ def show_stats_card(player):
 
                     height: 2px;
 
-                    margin-bottom: 31px;
+                    margin-bottom: 30px;
 
                 }}
 
                 .stats-grid-top {{
 
-                    gap: 5px;
+                    grid-template-columns:
+                        repeat(4, 1fr);
+
+                    gap: 2px;
 
                     margin-bottom: 34px;
 
@@ -661,13 +740,16 @@ def show_stats_card(player):
 
                 .stats-grid-bottom {{
 
-                    gap: 3px;
+                    grid-template-columns:
+                        repeat(4, 1fr);
+
+                    gap: 2px;
 
                 }}
 
                 .stat-label {{
 
-                    font-size: 13px;
+                    font-size: 12px;
 
                     margin-bottom: 9px;
 
@@ -675,13 +757,13 @@ def show_stats_card(player):
 
                 .stat-value {{
 
-                    font-size: 28px;
+                    font-size: 23px;
 
                 }}
 
                 .stat-value-small {{
 
-                    font-size: 25px;
+                    font-size: 22px;
 
                 }}
 
@@ -725,12 +807,12 @@ def show_stats_card(player):
     """
 
     # =====================================================
-    # ★ここでHTMLを直接レンダリング
+    # HTMLを直接描画
     # =====================================================
 
     components.html(
         html,
-        height=330,
+        height=340,
         scrolling=False
     )
 
@@ -870,19 +952,16 @@ def show_start_page():
                 allowed_teams = []
 
                 if "セ" in scopes:
-
                     allowed_teams.extend(
                         central
                     )
 
                 if "パ" in scopes:
-
                     allowed_teams.extend(
                         pacific
                     )
 
                 if not allowed_teams:
-
                     allowed_teams = (
                         central + pacific
                     )
@@ -906,19 +985,16 @@ def show_start_page():
                 allowed_roles = []
 
                 if "野手" in scopes:
-
                     allowed_roles.append(
                         "野手"
                     )
 
                 if "投手" in scopes:
-
                     allowed_roles.append(
                         "投手"
                     )
 
                 if not allowed_roles:
-
                     allowed_roles = [
                         "野手",
                         "投手"
@@ -1105,7 +1181,7 @@ def show_quiz_page():
     )
 
     # =====================================================
-    # 成績カード
+    # 成績
     # =====================================================
 
     show_stats_card(player)
@@ -1135,9 +1211,7 @@ def show_quiz_page():
     # 選手名検索
     # =====================================================
 
-    st.markdown(
-        "#### 選手名"
-    )
+    st.markdown("#### 選手名")
 
     selected_player = st.selectbox(
         "選手名を検索",
