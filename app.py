@@ -677,7 +677,7 @@ def show_start_page():
                 "パ"
             ],
             selection_mode="multi",
-            default=["全て"],
+            default=["投手", "野手", "セ", "パ"],  # 💡 最初から全部オンにする
             label_visibility="collapsed"
         )
 
