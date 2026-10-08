@@ -205,19 +205,13 @@ def normalize_name(text):
 # =========================================================
 
 def format_integer(value):
-
     """
     整数系。
     25.0 → 25
     0.0 → 0
     """
-
-    if value is None:
+    if value is None or str(value) == "-":
         return "-"
-
-    if str(value) == "-":
-        return "-"
-
     try:
         return str(int(float(value)))
     except Exception:
@@ -225,47 +219,48 @@ def format_integer(value):
 
 
 def format_rate(value):
-
     """
     打率・出塁率・OPS用。
-    0.6 → 0.600
-    0.600 → 0.600
+    0.300 → .300（先頭の0を消す）
+    1.050 → 1.050
     """
-
-    if value is None:
+    if value is None or str(value) == "-":
         return "-"
-
-    if str(value) == "-":
-        return "-"
-
     try:
-        return f"{float(value):.3f}"
+        formatted = f"{float(value):.3f}"
+        if formatted.startswith("0."):
+            return formatted[1:]  # 先頭の '0' を削る
+        return formatted
+    except Exception:
+        return str(value)
+
+
+def format_era(value):
+    """
+    防御率用。必ず小数点第2位まで表示。
+    2.5 → 2.50
+    0.0 → 0.00
+    """
+    if value is None or str(value) == "-":
+        return "-"
+    try:
+        return f"{float(value):.2f}"
     except Exception:
         return str(value)
 
 
 def format_decimal(value):
-
     """
-    防御率・投球回など。
-    Excelの値をそのまま基本表示する。
+    投球回など。
+    Excelの値をそのまま基本表示する（143.1 など）
     """
-
-    if value is None:
+    if value is None or str(value) == "-":
         return "-"
-
-    if str(value) == "-":
-        return "-"
-
     try:
-
         number = float(value)
-
         if number.is_integer():
             return str(int(number))
-
         return str(number)
-
     except Exception:
         return str(value)
 
@@ -310,45 +305,38 @@ def reset_question_state():
 st.markdown(
     """
     <style>
-
     .title-text {
         text-align: center;
         color: #1f2937;
         font-weight: 800;
         font-size: 32px;
     }
-
     .sub-text {
         text-align: center;
         color: #6b7280;
         font-size: 14px;
     }
-
     .section-title {
         color: #6b7280;
         font-size: 14px;
         margin-bottom: 10px;
         font-weight: bold;
     }
-
     .note-text {
         color: #9ca3af;
         font-size: 12px;
         margin-top: 5px;
         margin-bottom: 15px;
     }
-
     button[kind="primary"] {
         background-color: #0d9488 !important;
         color: white !important;
         border: none !important;
         font-weight: bold !important;
     }
-
     button[kind="primary"]:hover {
         background-color: #0f766e !important;
     }
-
     </style>
     """,
     unsafe_allow_html=True
@@ -378,7 +366,7 @@ def show_stats_card(player):
             ),
             (
                 "防御率",
-                format_decimal(player["防御率"])
+                format_era(player["防御率"])
             ),
             (
                 "奪三振",
@@ -452,20 +440,15 @@ def show_stats_card(player):
     # =====================================================
 
     top_html = ""
-
     for label, value in stats[:4]:
-
         top_html += f"""
         <div class="stat-item">
-
             <div class="stat-label">
                 {label}
             </div>
-
             <div class="stat-value">
                 {value}
             </div>
-
         </div>
         """
 
@@ -474,20 +457,15 @@ def show_stats_card(player):
     # =====================================================
 
     bottom_html = ""
-
     for label, value in stats[4:]:
-
         bottom_html += f"""
         <div class="stat-item">
-
             <div class="stat-label">
                 {label}
             </div>
-
             <div class="stat-value-small">
                 {value}
             </div>
-
         </div>
         """
 
@@ -497,25 +475,18 @@ def show_stats_card(player):
 
     html = f"""
     <!DOCTYPE html>
-
     <html lang="ja">
-
     <head>
-
         <meta charset="UTF-8">
-
         <style>
-
             * {{
                 box-sizing: border-box;
             }}
-
             html,
             body {{
                 margin: 0;
                 padding: 0;
                 background: transparent;
-
                 font-family:
                     -apple-system,
                     BlinkMacSystemFont,
@@ -523,268 +494,147 @@ def show_stats_card(player):
                     "Noto Sans JP",
                     sans-serif;
             }}
-
             .stats-card {{
-
                 width: 100%;
-
                 background: #ffffff;
-
                 border:
                     2px solid
                     #d6d3cc;
-
                 border-radius: 7px;
-
                 padding:
                     34px
                     42px
                     38px
                     42px;
-
             }}
-
             .stats-header {{
-
                 display: flex;
-
                 justify-content:
                     space-between;
-
                 align-items: center;
-
                 margin-bottom: 28px;
-
             }}
-
             .stats-title {{
-
                 font-size: 27px;
-
                 font-weight: 800;
-
                 color: #171717;
-
                 letter-spacing: 1px;
-
             }}
-
             .stats-year {{
-
                 font-size: 24px;
-
                 color: #6b7280;
-
                 font-weight: 400;
-
             }}
-
             .stats-line {{
-
                 width: 100%;
-
                 height: 3px;
-
                 background: #202020;
-
                 margin-bottom: 45px;
-
             }}
-
             .stats-grid-top {{
-
                 display: grid;
-
                 grid-template-columns:
                     repeat(4, 1fr);
-
                 gap: 20px;
-
                 margin-bottom: 42px;
-
             }}
-
             .stats-grid-bottom {{
-
                 display: grid;
-
                 grid-template-columns:
                     repeat(4, 1fr);
-
                 gap: 20px;
-
             }}
-
             .stat-item {{
-
                 text-align: center;
-
                 min-width: 0;
-
             }}
-
             .stat-label {{
-
                 color: #70757a;
-
                 font-size: 18px;
-
                 font-weight: 700;
-
                 margin-bottom: 12px;
-
                 white-space: nowrap;
-
             }}
-
             .stat-value {{
-
                 color: #171717;
-
                 font-size: 35px;
-
                 font-weight: 800;
-
                 line-height: 1.05;
-
                 white-space: nowrap;
-
             }}
-
             .stat-value-small {{
-
                 color: #171717;
-
                 font-size: 32px;
-
                 font-weight: 800;
-
                 line-height: 1.05;
-
                 white-space: nowrap;
-
             }}
-
             @media (max-width: 700px) {{
-
                 .stats-card {{
-
                     padding:
                         25px
                         10px
                         30px
                         10px;
-
                 }}
-
                 .stats-header {{
-
                     margin-bottom: 20px;
-
                 }}
-
                 .stats-title {{
-
                     font-size: 22px;
-
                 }}
-
                 .stats-year {{
-
                     font-size: 18px;
-
                 }}
-
                 .stats-line {{
-
                     height: 2px;
-
                     margin-bottom: 30px;
-
                 }}
-
                 .stats-grid-top {{
-
                     grid-template-columns:
                         repeat(4, 1fr);
-
                     gap: 2px;
-
                     margin-bottom: 34px;
-
                 }}
-
                 .stats-grid-bottom {{
-
                     grid-template-columns:
                         repeat(4, 1fr);
-
                     gap: 2px;
-
                 }}
-
                 .stat-label {{
-
                     font-size: 12px;
-
                     margin-bottom: 9px;
-
                 }}
-
                 .stat-value {{
-
                     font-size: 23px;
-
                 }}
-
                 .stat-value-small {{
-
                     font-size: 22px;
-
                 }}
-
             }}
-
         </style>
-
     </head>
-
     <body>
-
         <div class="stats-card">
-
             <div class="stats-header">
-
                 <div class="stats-title">
                     {title}
                 </div>
-
                 <div class="stats-year">
                     2026年
                 </div>
-
             </div>
-
             <div class="stats-line"></div>
-
             <div class="stats-grid-top">
                 {top_html}
             </div>
-
             <div class="stats-grid-bottom">
                 {bottom_html}
             </div>
-
         </div>
-
     </body>
-
     </html>
     """
-
-    # =====================================================
-    # HTMLを直接描画
-    # =====================================================
 
     components.html(
         html,
@@ -839,23 +689,39 @@ def show_start_page():
             unsafe_allow_html=True
         )
 
-        with st.expander(
-            "フィルター",
-            expanded=False
-        ):
+        # -------------------------------------------------
+        # フィルターUI
+        # -------------------------------------------------
+        with st.expander("フィルター", expanded=False):
 
-            min_pa = st.number_input(
-                "最低打席数",
-                min_value=0,
-                value=0,
-                step=50
+            st.markdown("**【野手】**")
+            col_b1, col_b2 = st.columns(2)
+            with col_b1:
+                min_pa = st.number_input("最低打席数", min_value=0, value=0, step=50)
+            with col_b2:
+                min_games_b = st.number_input("最低試合数", min_value=0, value=0, step=10)
+            
+            filter_op_b = st.radio(
+                "野手の条件結びつき",
+                ["AND（すべて満たす）", "OR（いずれかを満たす）"],
+                horizontal=True,
+                key="filter_op_b"
             )
 
-            min_ip = st.number_input(
-                "最低投球回数",
-                min_value=0.0,
-                value=0.0,
-                step=10.0
+            st.divider()
+
+            st.markdown("**【投手】**")
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                min_ip = st.number_input("最低投球回数", min_value=0.0, value=0.0, step=10.0)
+            with col_p2:
+                min_games_p = st.number_input("最低登板数", min_value=0, value=0, step=5)
+            
+            filter_op_p = st.radio(
+                "投手の条件結びつき",
+                ["AND（すべて満たす）", "OR（いずれかを満たす）"],
+                horizontal=True,
+                key="filter_op_p"
             )
 
         st.divider()
@@ -880,29 +746,10 @@ def show_start_page():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button(
-            "クイズ開始",
-            type="primary",
-            use_container_width=True
-        ):
+        if st.button("クイズ開始", type="primary", use_container_width=True):
 
-            central = [
-                "阪神",
-                "広島",
-                "DeNA",
-                "巨人",
-                "ヤクルト",
-                "中日"
-            ]
-
-            pacific = [
-                "オリックス",
-                "ロッテ",
-                "ソフトバンク",
-                "楽天",
-                "西武",
-                "日本ハム"
-            ]
+            central = ["阪神", "広島", "DeNA", "巨人", "ヤクルト", "中日"]
+            pacific = ["オリックス", "ロッテ", "ソフトバンク", "楽天", "西武", "日本ハム"]
 
             scopes = selected_scopes if selected_scopes else []
 
@@ -933,113 +780,90 @@ def show_start_page():
                 allowed_roles = ["野手", "投手"]
 
             # -------------------------------------------------
-            # 出題プール
+            # 出題プール生成
             # -------------------------------------------------
             pool = []
 
-            # -------------------------------------------------
-            # 野手
-            # -------------------------------------------------
+            # 野手処理
             if "野手" in allowed_roles:
-
                 b_df = dfs["野手"].copy()
+                b_df["打席数"] = pd.to_numeric(b_df["打席数"], errors="coerce").fillna(0)
+                b_df["試合数"] = pd.to_numeric(b_df["試合数"], errors="coerce").fillna(0)
 
-                b_df["打席数"] = pd.to_numeric(
-                    b_df["打席数"],
-                    errors="coerce"
-                ).fillna(0)
+                mask_team = b_df["球団"].isin(allowed_teams)
 
-                filtered_b = b_df[
-                    (
-                        b_df["球団"].isin(allowed_teams)
-                    )
-                    &
-                    (
-                        b_df["打席数"] >= min_pa
-                    )
-                ]
+                # 条件リスト作成（0の場合は条件に入れない）
+                conds_b = []
+                if min_pa > 0:
+                    conds_b.append(b_df["打席数"] >= min_pa)
+                if min_games_b > 0:
+                    conds_b.append(b_df["試合数"] >= min_games_b)
 
+                if not conds_b:
+                    mask_stats = pd.Series(True, index=b_df.index)
+                else:
+                    mask_stats = conds_b[0]
+                    for cond in conds_b[1:]:
+                        if "AND" in filter_op_b:
+                            mask_stats = mask_stats & cond
+                        else:
+                            mask_stats = mask_stats | cond
+
+                filtered_b = b_df[mask_team & mask_stats]
                 for _, row in filtered_b.iterrows():
-
                     player = row.to_dict()
-
                     player["type"] = "野手"
-
                     pool.append(player)
 
-            # -------------------------------------------------
-            # 投手
-            # -------------------------------------------------
+            # 投手処理
             if "投手" in allowed_roles:
-
                 p_df = dfs["投手"].copy()
+                p_df["投球回"] = pd.to_numeric(p_df["投球回"], errors="coerce").fillna(0)
+                p_df["登板数"] = pd.to_numeric(p_df["登板数"], errors="coerce").fillna(0)
 
-                p_df["投球回"] = pd.to_numeric(
-                    p_df["投球回"],
-                    errors="coerce"
-                ).fillna(0)
+                mask_team = p_df["球団"].isin(allowed_teams)
 
-                filtered_p = p_df[
-                    (
-                        p_df["球団"].isin(allowed_teams)
-                    )
-                    &
-                    (
-                        p_df["投球回"] >= min_ip
-                    )
-                ]
+                # 条件リスト作成（0の場合は条件に入れない）
+                conds_p = []
+                if min_ip > 0:
+                    conds_p.append(p_df["投球回"] >= min_ip)
+                if min_games_p > 0:
+                    conds_p.append(p_df["登板数"] >= min_games_p)
 
+                if not conds_p:
+                    mask_stats = pd.Series(True, index=p_df.index)
+                else:
+                    mask_stats = conds_p[0]
+                    for cond in conds_p[1:]:
+                        if "AND" in filter_op_p:
+                            mask_stats = mask_stats & cond
+                        else:
+                            mask_stats = mask_stats | cond
+
+                filtered_p = p_df[mask_team & mask_stats]
                 for _, row in filtered_p.iterrows():
-
                     player = row.to_dict()
-
                     player["type"] = "投手"
-
                     pool.append(player)
 
             # -------------------------------------------------
-            # 選手なし
+            # 選手なしエラー処理、開始処理
             # -------------------------------------------------
-
             if not pool:
-
-                st.error(
-                    "条件に合う選手がいません。"
-                    "フィルターを緩めてください。"
-                )
-
+                st.error("条件に合う選手がいません。フィルターを緩めてください。")
             else:
-
                 random.shuffle(pool)
 
                 if q_count_str == "エンドレス":
-
                     question_count = len(pool)
-
                 else:
+                    question_count = min(int(q_count_str.replace("問", "")), len(pool))
 
-                    question_count = min(
-                        int(
-                            q_count_str.replace(
-                                "問",
-                                ""
-                            )
-                        ),
-                        len(pool)
-                    )
-
-                st.session_state.quiz_pool = (
-                    pool[:question_count]
-                )
-
+                st.session_state.quiz_pool = pool[:question_count]
                 st.session_state.q_index = 0
-
                 st.session_state.score = 0
-
                 reset_question_state()
-
                 st.session_state.current_page = "quiz"
-
                 st.rerun()
 
 
@@ -1052,43 +876,23 @@ def show_quiz_page():
     # -----------------------------------------------------
     # 中断
     # -----------------------------------------------------
-
-    if st.button(
-        "← 中断してスタート画面に戻る"
-    ):
-
+    if st.button("← 中断してスタート画面に戻る"):
         st.session_state.current_page = "start"
-
         st.rerun()
 
     # -----------------------------------------------------
     # 選手取得
     # -----------------------------------------------------
-
-    total_q = len(
-        st.session_state.quiz_pool
-    )
-
-    current_idx = (
-        st.session_state.q_index
-    )
-
-    player = (
-        st.session_state.quiz_pool[
-            current_idx
-        ]
-    )
+    total_q = len(st.session_state.quiz_pool)
+    current_idx = st.session_state.q_index
+    player = st.session_state.quiz_pool[current_idx]
 
     # -----------------------------------------------------
     # 問題番号
     # -----------------------------------------------------
-
     st.markdown(
         f"""
-        <h4 style="
-            text-align:center;
-            color:#6b7280;
-        ">
+        <h4 style="text-align:center; color:#6b7280;">
             第 {current_idx + 1} 問 / {total_q}問中
         </h4>
         """,
@@ -1097,8 +901,7 @@ def show_quiz_page():
 
     st.markdown(
         """
-        <h2 class="title-text"
-            style="font-size:24px;">
+        <h2 class="title-text" style="font-size:24px;">
             ⚾ この成績の選手は誰？
         </h2>
         """,
@@ -1108,34 +911,24 @@ def show_quiz_page():
     # =====================================================
     # 成績
     # =====================================================
-
     show_stats_card(player)
 
     # =====================================================
     # ヒント
     # =====================================================
-
     st.markdown("#### 💡 ヒント")
 
-    if st.button(
-        "所属球団を見る",
-        use_container_width=True
-    ):
-
+    if st.button("所属球団を見る", use_container_width=True):
         st.session_state.hint_team = True
 
     if st.session_state.hint_team:
-
-        st.info(
-            f"所属球団：{player['球団']}"
-        )
+        st.info(f"所属球団：{player['球団']}")
 
     st.markdown("---")
 
     # =====================================================
     # 選手名検索
     # =====================================================
-
     st.markdown("#### 選手名")
 
     selected_player = st.selectbox(
@@ -1151,116 +944,56 @@ def show_quiz_page():
     # =====================================================
     # 解答
     # =====================================================
-
     if not st.session_state.is_answered:
 
-        answer_col, skip_col = st.columns(
-            [3, 1]
-        )
+        answer_col, skip_col = st.columns([3, 1])
 
         with answer_col:
-
-            if st.button(
-                "解答",
-                type="primary",
-                use_container_width=True
-            ):
-
+            if st.button("解答", type="primary", use_container_width=True):
                 if selected_player is None:
-
-                    st.warning(
-                        "選手名を検索して選択してください。"
-                    )
-
+                    st.warning("選手名を検索して選択してください。")
                 else:
-
-                    input_name = normalize_name(
-                        selected_player
-                    )
-
-                    correct_name = normalize_name(
-                        player["選手名"]
-                    )
+                    input_name = normalize_name(selected_player)
+                    correct_name = normalize_name(player["選手名"])
 
                     if input_name == correct_name:
-
                         st.session_state.is_correct = True
-
                         st.session_state.score += 1
-
                     else:
-
                         st.session_state.is_correct = False
 
                     st.session_state.is_answered = True
-
                     st.rerun()
 
         with skip_col:
-
-            if st.button(
-                "分からない",
-                use_container_width=True
-            ):
-
+            if st.button("分からない", use_container_width=True):
                 st.session_state.is_correct = False
-
                 st.session_state.is_answered = True
-
                 st.rerun()
 
     # =====================================================
     # 解答後
     # =====================================================
-
     else:
-
         if st.session_state.is_correct:
-
-            st.success(
-                f"🎉 大正解！"
-                f" 答えは「{player['選手名']}」でした！"
-            )
-
+            st.success(f"🎉 大正解！ 答えは「{player['選手名']}」でした！")
         else:
-
-            st.error(
-                f"残念！"
-                f" 正解は「{player['選手名']}」でした。"
-            )
+            st.error(f"残念！ 正解は「{player['選手名']}」でした。")
 
         # -------------------------------------------------
         # 次の問題
         # -------------------------------------------------
-
         if current_idx + 1 < total_q:
-
-            if st.button(
-                "次の問題へ ➡",
-                type="primary",
-                use_container_width=True
-            ):
-
+            if st.button("次の問題へ ➡", type="primary", use_container_width=True):
                 st.session_state.q_index += 1
-
                 reset_question_state()
-
                 st.rerun()
-
         # -------------------------------------------------
         # 結果
         # -------------------------------------------------
-
         else:
-
-            if st.button(
-                "結果を見る 🏆",
-                type="primary",
-                use_container_width=True
-            ):
-
+            if st.button("結果を見る 🏆", type="primary", use_container_width=True):
                 st.session_state.current_page = "result"
-
                 st.rerun()
 
 
@@ -1277,20 +1010,14 @@ def show_result_page():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    total_q = len(
-        st.session_state.quiz_pool
-    )
-
+    total_q = len(st.session_state.quiz_pool)
     score = st.session_state.score
 
     st.markdown(
         f"""
         <h2 style="text-align:center;">
             {total_q}問中
-            <span style="
-                color:#0d9488;
-                font-size:48px;
-            ">
+            <span style="color:#0d9488; font-size:48px;">
                 {score}
             </span>
             問正解！
@@ -1300,17 +1027,10 @@ def show_result_page():
     )
 
     st.balloons()
-
     st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button(
-        "トップへ戻る",
-        type="primary",
-        use_container_width=True
-    ):
-
+    if st.button("トップへ戻る", type="primary", use_container_width=True):
         st.session_state.current_page = "start"
-
         st.rerun()
 
 
@@ -1319,13 +1039,8 @@ def show_result_page():
 # =========================================================
 
 if st.session_state.current_page == "start":
-
     show_start_page()
-
 elif st.session_state.current_page == "quiz":
-
     show_quiz_page()
-
 elif st.session_state.current_page == "result":
-
     show_result_page()
