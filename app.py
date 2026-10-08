@@ -680,19 +680,52 @@ def show_quiz_page():
 
     st.markdown("---")
 
-    # =====================================================
     # 回答入力
-    # =====================================================
+st.markdown("### 回答")
 
-    answer_input = st.text_input(
-        "選手名を入力",
-        placeholder="例: 近本光司",
-        disabled=st.session_state.is_answered
-    )
+answer_key = f"answer_{st.session_state.q_index}"
 
-    if not st.session_state.is_answered:
+answer = st.text_input(
+    "選手名を入力してください",
+    key=answer_key,
+    placeholder="例：村上、佐藤輝明"
+)
 
-        ans_col, skip_col = st.columns(2)
+# =========================
+# 全選手から検索候補を表示
+# =========================
+if answer:
+    normalized_answer = normalize_name(answer)
+
+    all_names = []
+
+    # 野手・投手の両方から全選手を取得
+    for sheet_name in ["野手", "投手"]:
+        if sheet_name in dfs:
+            for name in dfs[sheet_name]["選手名"]:
+                name = str(name).strip()
+
+                if name and name != "-" and name not in all_names:
+                    all_names.append(name)
+
+    # 入力文字を含む選手を検索
+    candidates = [
+        name for name in all_names
+        if normalized_answer in normalize_name(name)
+    ]
+
+    if candidates:
+        st.markdown("**検索候補**")
+
+        # 最大10人まで表示
+        for i, candidate in enumerate(candidates[:10]):
+            if st.button(
+                candidate,
+                key=f"candidate_{st.session_state.q_index}_{i}",
+                use_container_width=True
+            ):
+                st.session_state[answer_key] = candidate
+                st.rerun()
 
         # -------------------------------------------------
         # 解答
