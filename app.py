@@ -65,8 +65,9 @@ def load_data():
         "勝利", "敗北", "セーブ", "HP", "奪三振"
     ]
     
+    # 基本データから「球団」を除外
     required_basic = [
-        "選手名", "球団", "生年月日", "年数", "年俸", 
+        "選手名", "生年月日", "年数", "年俸", 
         "投打", "出身", "背番号"
     ]
 
@@ -88,10 +89,11 @@ def load_data():
 
     # =====================================================
     # 基本データを成績シートにマージ（合体）する
+    # 結合キーを「選手名」のみに変更
     # =====================================================
     
-    dfs["野手"] = pd.merge(dfs["野手"], dfs["基本データ"], on=["選手名", "球団"], how="left")
-    dfs["投手"] = pd.merge(dfs["投手"], dfs["基本データ"], on=["選手名", "球団"], how="left")
+    dfs["野手"] = pd.merge(dfs["野手"], dfs["基本データ"], on="選手名", how="left")
+    dfs["投手"] = pd.merge(dfs["投手"], dfs["基本データ"], on="選手名", how="left")
 
     # =====================================================
     # 数値化
@@ -217,7 +219,6 @@ if "is_answered" not in st.session_state:
 if "is_correct" not in st.session_state:
     st.session_state.is_correct = False
 
-# ヒント管理用ステート
 if "hint_limits" not in st.session_state:
     st.session_state.hint_limits = {}
 
@@ -228,7 +229,7 @@ if "opened_hints" not in st.session_state:
 def reset_question_state():
     st.session_state.is_answered = False
     st.session_state.is_correct = False
-    st.session_state.opened_hints = []  # 新しい問題にいくたびに開いたヒントをリセット
+    st.session_state.opened_hints = []
 
 
 # =========================================================
