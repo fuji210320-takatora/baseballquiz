@@ -363,12 +363,6 @@ def show_stats_card(player):
 
     # =====================================================
     # 投手
-    #
-    # 上段
-    # 登板数 / 投球回 / 防御率 / 奪三振
-    #
-    # 下段
-    # 勝利 / 敗北 / セーブ / HP
     # =====================================================
 
     if player["type"] == "投手":
@@ -412,12 +406,6 @@ def show_stats_card(player):
 
     # =====================================================
     # 野手
-    #
-    # 上段
-    # 試合数 / 打率 / 本塁打 / 打点
-    #
-    # 下段
-    # 打席数 / 出塁率 / 盗塁 / OPS
     # =====================================================
 
     else:
@@ -603,10 +591,6 @@ def show_stats_card(player):
 
             }}
 
-            /* ==============================
-               上段
-               ============================== */
-
             .stats-grid-top {{
 
                 display: grid;
@@ -619,10 +603,6 @@ def show_stats_card(player):
                 margin-bottom: 42px;
 
             }}
-
-            /* ==============================
-               下段
-               ============================== */
 
             .stats-grid-bottom {{
 
@@ -684,10 +664,6 @@ def show_stats_card(player):
                 white-space: nowrap;
 
             }}
-
-            /* ==============================
-               スマホ
-               ============================== */
 
             @media (max-width: 700px) {{
 
@@ -928,88 +904,42 @@ def show_start_page():
                 "日本ハム"
             ]
 
-            scopes = (
-                selected_scopes
-                if selected_scopes
-                else []
-            )
+            scopes = selected_scopes if selected_scopes else []
 
             # -------------------------------------------------
-            # リーグ
+            # リーグの判定
             # -------------------------------------------------
-
-            if (
-                "全て" in scopes
-                or len(scopes) == 0
-            ):
-
-                allowed_teams = (
-                    central + pacific
-                )
-
-            else:
-
-                allowed_teams = []
-
-                if "セ" in scopes:
-                    allowed_teams.extend(
-                        central
-                    )
-
-                if "パ" in scopes:
-                    allowed_teams.extend(
-                        pacific
-                    )
-
-                if not allowed_teams:
-                    allowed_teams = (
-                        central + pacific
-                    )
+            allowed_teams = []
+            
+            if "セ" in scopes:
+                allowed_teams.extend(central)
+            if "パ" in scopes:
+                allowed_teams.extend(pacific)
+            
+            if (not allowed_teams) or ("全て" in scopes):
+                allowed_teams = central + pacific
 
             # -------------------------------------------------
-            # 投手・野手
+            # 投手・野手の判定
             # -------------------------------------------------
-
-            if (
-                "全て" in scopes
-                or len(scopes) == 0
-            ):
-
-                allowed_roles = [
-                    "野手",
-                    "投手"
-                ]
-
-            else:
-
-                allowed_roles = []
-
-                if "野手" in scopes:
-                    allowed_roles.append(
-                        "野手"
-                    )
-
-                if "投手" in scopes:
-                    allowed_roles.append(
-                        "投手"
-                    )
-
-                if not allowed_roles:
-                    allowed_roles = [
-                        "野手",
-                        "投手"
-                    ]
+            allowed_roles = []
+            
+            if "野手" in scopes:
+                allowed_roles.append("野手")
+            if "投手" in scopes:
+                allowed_roles.append("投手")
+            
+            if (not allowed_roles) or ("全て" in scopes):
+                allowed_roles = ["野手", "投手"]
 
             # -------------------------------------------------
             # 出題プール
             # -------------------------------------------------
-
             pool = []
 
             # -------------------------------------------------
             # 野手
             # -------------------------------------------------
-
             if "野手" in allowed_roles:
 
                 b_df = dfs["野手"].copy()
@@ -1021,9 +951,7 @@ def show_start_page():
 
                 filtered_b = b_df[
                     (
-                        b_df["球団"].isin(
-                            allowed_teams
-                        )
+                        b_df["球団"].isin(allowed_teams)
                     )
                     &
                     (
@@ -1042,7 +970,6 @@ def show_start_page():
             # -------------------------------------------------
             # 投手
             # -------------------------------------------------
-
             if "投手" in allowed_roles:
 
                 p_df = dfs["投手"].copy()
@@ -1054,9 +981,7 @@ def show_start_page():
 
                 filtered_p = p_df[
                     (
-                        p_df["球団"].isin(
-                            allowed_teams
-                        )
+                        p_df["球団"].isin(allowed_teams)
                     )
                     &
                     (
