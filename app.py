@@ -674,8 +674,7 @@ def show_start_page():
                 "投手",
                 "野手",
                 "セ",
-                "パ",
-                "全て"
+                "パ"
             ],
             selection_mode="multi",
             default=["全て"],
