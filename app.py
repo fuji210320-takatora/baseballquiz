@@ -37,7 +37,6 @@ def load_data():
     # =====================================================
 
     if "野手" not in dfs or "投手" not in dfs:
-
         st.error(
             "🚨 【エラー】Excelファイル内に"
             "「野手」と「投手」のシートが必要です。"
@@ -86,7 +85,6 @@ def load_data():
     ]
 
     if missing_b:
-
         st.error(
             "🚨 「野手」シートに以下の列がありません: "
             + ", ".join(missing_b)
@@ -94,7 +92,6 @@ def load_data():
         st.stop()
 
     if missing_p:
-
         st.error(
             "🚨 「投手」シートに以下の列がありません: "
             + ", ".join(missing_p)
@@ -124,14 +121,12 @@ def load_data():
     ]
 
     for col in batter_numeric:
-
         dfs["野手"][col] = pd.to_numeric(
             dfs["野手"][col],
             errors="coerce"
         ).fillna(0)
 
     for col in pitcher_numeric:
-
         dfs["投手"][col] = pd.to_numeric(
             dfs["投手"][col],
             errors="coerce"
@@ -279,6 +274,7 @@ st.markdown(
         margin-bottom: 15px;
     }
 
+
     /* ================================================
        成績カード
        ================================================ */
@@ -323,7 +319,7 @@ st.markdown(
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 35px;
-        margin-bottom: 38px;
+        margin-bottom: 42px;
     }
 
     .stats-grid-bottom {
@@ -361,18 +357,24 @@ st.markdown(
         white-space: nowrap;
     }
 
+
     /* ================================================
-       スマホ
+       スマホ表示
        ================================================ */
 
     @media (max-width: 700px) {
 
         .stats-card {
-            padding: 25px 17px 30px 17px;
+            padding: 25px 12px 30px 12px;
+            border-radius: 7px;
+        }
+
+        .stats-header {
+            margin-bottom: 20px;
         }
 
         .stats-title {
-            font-size: 22px;
+            font-size: 23px;
         }
 
         .stats-year {
@@ -380,20 +382,21 @@ st.markdown(
         }
 
         .stats-line {
-            margin-bottom: 32px;
+            height: 2px;
+            margin-bottom: 31px;
         }
 
         .stats-grid-top {
-            gap: 8px;
-            margin-bottom: 32px;
+            gap: 5px;
+            margin-bottom: 34px;
         }
 
         .stats-grid-bottom {
-            gap: 7px;
+            gap: 3px;
         }
 
         .stat-label {
-            font-size: 14px;
+            font-size: 13px;
             margin-bottom: 9px;
         }
 
@@ -405,6 +408,7 @@ st.markdown(
             font-size: 25px;
         }
     }
+
 
     /* ================================================
        ボタン
@@ -421,6 +425,7 @@ st.markdown(
         background-color: #0f766e !important;
     }
 
+
     /* ================================================
        検索欄
        ================================================ */
@@ -436,7 +441,7 @@ st.markdown(
 
 
 # =========================================================
-# 表示用関数
+# 表示用
 # =========================================================
 
 def display_value(value):
@@ -456,18 +461,11 @@ def display_value(value):
 
 def show_stats_card(player):
 
-    if player["type"] == "投手":
+    # =====================================================
+    # 投手
+    # =====================================================
 
-        # ---------------------------------------------
-        # 投手成績
-        # 成績自体は7項目のまま
-        #
-        # 1段目
-        # 登板数 / 防御率 / 勝利
-        #
-        # 2段目
-        # 敗北 / セーブ / HP / 奪三振
-        # ---------------------------------------------
+    if player["type"] == "投手":
 
         top_stats = [
             (
@@ -505,17 +503,11 @@ def show_stats_card(player):
 
         title = "投手成績"
 
-    else:
+    # =====================================================
+    # 野手
+    # =====================================================
 
-        # ---------------------------------------------
-        # 野手成績
-        #
-        # 1段目
-        # 試合数 / 打席数 / 打率
-        #
-        # 2段目
-        # 本塁打 / 打点 / 盗塁 / OPS
-        # ---------------------------------------------
+    else:
 
         top_stats = [
             (
@@ -554,7 +546,7 @@ def show_stats_card(player):
         title = "野手成績"
 
     # =====================================================
-    # HTML作成
+    # 上段HTML
     # =====================================================
 
     top_html = ""
@@ -568,6 +560,10 @@ def show_stats_card(player):
         </div>
         """
 
+    # =====================================================
+    # 下段HTML
+    # =====================================================
+
     bottom_html = ""
 
     for label, value in bottom_stats:
@@ -578,6 +574,10 @@ def show_stats_card(player):
             <div class="stat-value-small">{value}</div>
         </div>
         """
+
+    # =====================================================
+    # 成績カードHTML
+    # =====================================================
 
     html = f"""
     <div class="stats-card">
@@ -606,6 +606,11 @@ def show_stats_card(player):
 
     </div>
     """
+
+    # =====================================================
+    # 重要
+    # HTMLとして描画する
+    # =====================================================
 
     st.markdown(
         html,
@@ -758,7 +763,6 @@ def show_start_page():
                     )
 
                 if not allowed_teams:
-
                     allowed_teams = (
                         central + pacific
                     )
@@ -792,19 +796,21 @@ def show_start_page():
                     )
 
                 if not allowed_roles:
-
                     allowed_roles = [
                         "野手",
                         "投手"
                     ]
 
             # -----------------------------------------
-            # プール作成
+            # 出題プール
             # -----------------------------------------
 
             pool = []
 
+            # -----------------------------------------
             # 野手
+            # -----------------------------------------
+
             if "野手" in allowed_roles:
 
                 b_df = dfs["野手"].copy()
@@ -829,11 +835,15 @@ def show_start_page():
                 for _, row in filtered_b.iterrows():
 
                     player = row.to_dict()
+
                     player["type"] = "野手"
 
                     pool.append(player)
 
+            # -----------------------------------------
             # 投手
+            # -----------------------------------------
+
             if "投手" in allowed_roles:
 
                 p_df = dfs["投手"].copy()
@@ -858,6 +868,7 @@ def show_start_page():
                 for _, row in filtered_p.iterrows():
 
                     player = row.to_dict()
+
                     player["type"] = "投手"
 
                     pool.append(player)
@@ -898,6 +909,7 @@ def show_start_page():
                 )
 
                 st.session_state.q_index = 0
+
                 st.session_state.score = 0
 
                 reset_question_state()
@@ -942,7 +954,7 @@ def show_quiz_page():
         st.rerun()
 
     # -----------------------------------------
-    # 選手取得
+    # データ取得
     # -----------------------------------------
 
     total_q = len(
@@ -986,7 +998,7 @@ def show_quiz_page():
     )
 
     # =====================================================
-    # 成績
+    # 成績カード
     # =====================================================
 
     show_stats_card(player)
