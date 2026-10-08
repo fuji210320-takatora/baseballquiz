@@ -144,7 +144,16 @@ def show_start_page():
             pool = []
             if "野手" in allowed_roles:
                 b_df = dfs["野手"]
-                filtered_b = b_df[(b_df["球団"].isin(allowed_leagues)) & (b_df["打席数"] >= min_pa)]
+                # --- 修正前 ---
+# filtered_b = b_df[(b_df["球団"].isin(allowed_leagues)) & (b_df["打席数"] >= min_pa)]
+
+# --- 修正後 ---
+# 1. 「打席数」の中身を強制的に数値型（エラー文字は0に置換）に変換
+                b_df["打席数"] = pd.to_numeric(b_df["打席数"], errors="coerce").fillna(0).astype(int)
+
+# 2. その後で比較を行う（エラーが消えます）
+　　　　　　　　　 filtered_b = b_df[(b_df["球団"].isin(allowed_leagues)) & (b_df["打席数"] >= min_pa)]
+
                 for _, row in filtered_b.iterrows():
                     d = row.to_dict()
                     d['type'] = '野手'
