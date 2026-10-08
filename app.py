@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import random
 import re
@@ -32,20 +33,21 @@ def load_data():
         )
         st.stop()
 
-    # =====================================================
+    # -----------------------------------------------------
     # シート確認
-    # =====================================================
+    # -----------------------------------------------------
 
     if "野手" not in dfs or "投手" not in dfs:
+
         st.error(
             "🚨 【エラー】Excelファイル内に"
             "「野手」と「投手」のシートが必要です。"
         )
         st.stop()
 
-    # =====================================================
+    # -----------------------------------------------------
     # 必要列
-    # =====================================================
+    # -----------------------------------------------------
 
     required_batter = [
         "選手名",
@@ -85,6 +87,7 @@ def load_data():
     ]
 
     if missing_b:
+
         st.error(
             "🚨 「野手」シートに以下の列がありません: "
             + ", ".join(missing_b)
@@ -92,15 +95,16 @@ def load_data():
         st.stop()
 
     if missing_p:
+
         st.error(
             "🚨 「投手」シートに以下の列がありません: "
             + ", ".join(missing_p)
         )
         st.stop()
 
-    # =====================================================
+    # -----------------------------------------------------
     # 数値化
-    # =====================================================
+    # -----------------------------------------------------
 
     batter_numeric = [
         "試合数",
@@ -121,22 +125,25 @@ def load_data():
     ]
 
     for col in batter_numeric:
+
         dfs["野手"][col] = pd.to_numeric(
             dfs["野手"][col],
             errors="coerce"
         ).fillna(0)
 
     for col in pitcher_numeric:
+
         dfs["投手"][col] = pd.to_numeric(
             dfs["投手"][col],
             errors="coerce"
         ).fillna(0)
 
-    # =====================================================
-    # 空欄処理
-    # =====================================================
+    # -----------------------------------------------------
+    # 空欄
+    # -----------------------------------------------------
 
     for sheet in dfs:
+
         dfs[sheet] = dfs[sheet].fillna("-")
 
     return dfs
@@ -167,6 +174,7 @@ def get_all_player_names():
                 and name != "-"
                 and name not in names
             ):
+
                 names.append(name)
 
     return sorted(names)
@@ -223,29 +231,21 @@ if "is_correct" not in st.session_state:
 if "hint_team" not in st.session_state:
     st.session_state.hint_team = False
 
-if "selected_answer" not in st.session_state:
-    st.session_state.selected_answer = None
-
 
 def reset_question_state():
 
     st.session_state.is_answered = False
     st.session_state.is_correct = False
     st.session_state.hint_team = False
-    st.session_state.selected_answer = None
 
 
 # =========================================================
-# CSS
+# 通常CSS
 # =========================================================
 
 st.markdown(
     """
     <style>
-
-    /* ================================================
-       全体
-       ================================================ */
 
     .title-text {
         text-align: center;
@@ -274,146 +274,6 @@ st.markdown(
         margin-bottom: 15px;
     }
 
-
-    /* ================================================
-       成績カード
-       ================================================ */
-
-    .stats-card {
-        background: #ffffff;
-        border: 2px solid #d6d3cc;
-        border-radius: 7px;
-        padding: 34px 42px 38px 42px;
-        margin: 12px 0 25px 0;
-        box-sizing: border-box;
-    }
-
-    .stats-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 28px;
-    }
-
-    .stats-title {
-        font-size: 27px;
-        font-weight: 800;
-        color: #171717;
-        letter-spacing: 1px;
-    }
-
-    .stats-year {
-        font-size: 24px;
-        color: #6b7280;
-        font-weight: 400;
-    }
-
-    .stats-line {
-        height: 3px;
-        background: #202020;
-        width: 100%;
-        margin-bottom: 45px;
-    }
-
-    .stats-grid-top {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 35px;
-        margin-bottom: 42px;
-    }
-
-    .stats-grid-bottom {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 25px;
-    }
-
-    .stat-item {
-        text-align: center;
-        min-width: 0;
-    }
-
-    .stat-label {
-        color: #70757a;
-        font-size: 19px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        white-space: nowrap;
-    }
-
-    .stat-value {
-        color: #171717;
-        font-size: 42px;
-        font-weight: 800;
-        line-height: 1.05;
-        white-space: nowrap;
-    }
-
-    .stat-value-small {
-        color: #171717;
-        font-size: 37px;
-        font-weight: 800;
-        line-height: 1.05;
-        white-space: nowrap;
-    }
-
-
-    /* ================================================
-       スマホ表示
-       ================================================ */
-
-    @media (max-width: 700px) {
-
-        .stats-card {
-            padding: 25px 12px 30px 12px;
-            border-radius: 7px;
-        }
-
-        .stats-header {
-            margin-bottom: 20px;
-        }
-
-        .stats-title {
-            font-size: 23px;
-        }
-
-        .stats-year {
-            font-size: 19px;
-        }
-
-        .stats-line {
-            height: 2px;
-            margin-bottom: 31px;
-        }
-
-        .stats-grid-top {
-            gap: 5px;
-            margin-bottom: 34px;
-        }
-
-        .stats-grid-bottom {
-            gap: 3px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            margin-bottom: 9px;
-        }
-
-        .stat-value {
-            font-size: 28px;
-        }
-
-        .stat-value-small {
-            font-size: 25px;
-        }
-    }
-
-
-    /* ================================================
-       ボタン
-       ================================================ */
-
     button[kind="primary"] {
         background-color: #0d9488 !important;
         color: white !important;
@@ -423,15 +283,6 @@ st.markdown(
 
     button[kind="primary"]:hover {
         background-color: #0f766e !important;
-    }
-
-
-    /* ================================================
-       検索欄
-       ================================================ */
-
-    div[data-baseweb="select"] {
-        border-radius: 10px;
     }
 
     </style>
@@ -457,6 +308,9 @@ def display_value(value):
 
 # =========================================================
 # 成績カード
+#
+# ★ st.components.v1.html を使用
+# ★ st.markdown では描画しない
 # =========================================================
 
 def show_stats_card(player):
@@ -467,7 +321,7 @@ def show_stats_card(player):
 
     if player["type"] == "投手":
 
-        top_stats = [
+        stats = [
             (
                 "登板数",
                 f"{display_value(player['登板数'])}試合"
@@ -479,10 +333,7 @@ def show_stats_card(player):
             (
                 "勝利",
                 f"{display_value(player['勝利'])}勝"
-            )
-        ]
-
-        bottom_stats = [
+            ),
             (
                 "敗北",
                 f"{display_value(player['敗北'])}敗"
@@ -509,7 +360,7 @@ def show_stats_card(player):
 
     else:
 
-        top_stats = [
+        stats = [
             (
                 "試合数",
                 f"{display_value(player['試合数'])}試合"
@@ -521,10 +372,7 @@ def show_stats_card(player):
             (
                 "打率",
                 display_value(player["打率"])
-            )
-        ]
-
-        bottom_stats = [
+            ),
             (
                 "本塁打",
                 f"{display_value(player['本塁打'])}本"
@@ -546,75 +394,344 @@ def show_stats_card(player):
         title = "野手成績"
 
     # =====================================================
-    # 上段HTML
+    # 上段3項目
     # =====================================================
 
     top_html = ""
 
-    for label, value in top_stats:
+    for label, value in stats[:3]:
 
         top_html += f"""
         <div class="stat-item">
-            <div class="stat-label">{label}</div>
-            <div class="stat-value">{value}</div>
+            <div class="stat-label">
+                {label}
+            </div>
+
+            <div class="stat-value">
+                {value}
+            </div>
         </div>
         """
 
     # =====================================================
-    # 下段HTML
+    # 下段4項目
     # =====================================================
 
     bottom_html = ""
 
-    for label, value in bottom_stats:
+    for label, value in stats[3:]:
 
         bottom_html += f"""
         <div class="stat-item">
-            <div class="stat-label">{label}</div>
-            <div class="stat-value-small">{value}</div>
+            <div class="stat-label">
+                {label}
+            </div>
+
+            <div class="stat-value-small">
+                {value}
+            </div>
         </div>
         """
 
     # =====================================================
-    # 成績カードHTML
+    # HTML
     # =====================================================
 
     html = f"""
-    <div class="stats-card">
+    <!DOCTYPE html>
 
-        <div class="stats-header">
+    <html lang="ja">
 
-            <div class="stats-title">
-                {title}
+    <head>
+
+        <meta charset="UTF-8">
+
+        <style>
+
+            * {{
+                box-sizing: border-box;
+            }}
+
+            html,
+            body {{
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                font-family:
+                    -apple-system,
+                    BlinkMacSystemFont,
+                    "Segoe UI",
+                    "Noto Sans JP",
+                    sans-serif;
+            }}
+
+            .stats-card {{
+
+                width: 100%;
+
+                background: #ffffff;
+
+                border: 2px solid #d6d3cc;
+
+                border-radius: 7px;
+
+                padding:
+                    34px
+                    42px
+                    38px
+                    42px;
+
+                margin: 0;
+
+            }}
+
+            .stats-header {{
+
+                display: flex;
+
+                justify-content:
+                    space-between;
+
+                align-items: center;
+
+                margin-bottom: 28px;
+
+            }}
+
+            .stats-title {{
+
+                font-size: 27px;
+
+                font-weight: 800;
+
+                color: #171717;
+
+                letter-spacing: 1px;
+
+            }}
+
+            .stats-year {{
+
+                font-size: 24px;
+
+                color: #6b7280;
+
+                font-weight: 400;
+
+            }}
+
+            .stats-line {{
+
+                width: 100%;
+
+                height: 3px;
+
+                background: #202020;
+
+                margin-bottom: 45px;
+
+            }}
+
+            .stats-grid-top {{
+
+                display: grid;
+
+                grid-template-columns:
+                    repeat(3, 1fr);
+
+                gap: 35px;
+
+                margin-bottom: 42px;
+
+            }}
+
+            .stats-grid-bottom {{
+
+                display: grid;
+
+                grid-template-columns:
+                    repeat(4, 1fr);
+
+                gap: 25px;
+
+            }}
+
+            .stat-item {{
+
+                text-align: center;
+
+                min-width: 0;
+
+            }}
+
+            .stat-label {{
+
+                color: #70757a;
+
+                font-size: 19px;
+
+                font-weight: 700;
+
+                margin-bottom: 12px;
+
+                white-space: nowrap;
+
+            }}
+
+            .stat-value {{
+
+                color: #171717;
+
+                font-size: 42px;
+
+                font-weight: 800;
+
+                line-height: 1.05;
+
+                white-space: nowrap;
+
+            }}
+
+            .stat-value-small {{
+
+                color: #171717;
+
+                font-size: 37px;
+
+                font-weight: 800;
+
+                line-height: 1.05;
+
+                white-space: nowrap;
+
+            }}
+
+
+            /* ==========================================
+               スマホ
+               ========================================== */
+
+            @media (max-width: 700px) {{
+
+                .stats-card {{
+
+                    padding:
+                        25px
+                        12px
+                        30px
+                        12px;
+
+                    border-radius: 7px;
+
+                }}
+
+                .stats-header {{
+
+                    margin-bottom: 20px;
+
+                }}
+
+                .stats-title {{
+
+                    font-size: 23px;
+
+                }}
+
+                .stats-year {{
+
+                    font-size: 19px;
+
+                }}
+
+                .stats-line {{
+
+                    height: 2px;
+
+                    margin-bottom: 31px;
+
+                }}
+
+                .stats-grid-top {{
+
+                    gap: 5px;
+
+                    margin-bottom: 34px;
+
+                }}
+
+                .stats-grid-bottom {{
+
+                    gap: 3px;
+
+                }}
+
+                .stat-label {{
+
+                    font-size: 13px;
+
+                    margin-bottom: 9px;
+
+                }}
+
+                .stat-value {{
+
+                    font-size: 28px;
+
+                }}
+
+                .stat-value-small {{
+
+                    font-size: 25px;
+
+                }}
+
+            }}
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div class="stats-card">
+
+            <div class="stats-header">
+
+                <div class="stats-title">
+                    {title}
+                </div>
+
+                <div class="stats-year">
+                    2026年
+                </div>
+
             </div>
 
-            <div class="stats-year">
-                2026年
+            <div class="stats-line"></div>
+
+            <div class="stats-grid-top">
+                {top_html}
+            </div>
+
+            <div class="stats-grid-bottom">
+                {bottom_html}
             </div>
 
         </div>
 
-        <div class="stats-line"></div>
+    </body>
 
-        <div class="stats-grid-top">
-            {top_html}
-        </div>
-
-        <div class="stats-grid-bottom">
-            {bottom_html}
-        </div>
-
-    </div>
+    </html>
     """
 
     # =====================================================
-    # 重要
-    # HTMLとして描画する
+    # ★ここでHTMLを直接レンダリング
     # =====================================================
 
-    st.markdown(
+    components.html(
         html,
-        unsafe_allow_html=True
+        height=330,
+        scrolling=False
     )
 
 
@@ -735,9 +852,9 @@ def show_start_page():
                 else []
             )
 
-            # -----------------------------------------
+            # -------------------------------------------------
             # リーグ
-            # -----------------------------------------
+            # -------------------------------------------------
 
             if (
                 "全て" in scopes
@@ -753,23 +870,26 @@ def show_start_page():
                 allowed_teams = []
 
                 if "セ" in scopes:
+
                     allowed_teams.extend(
                         central
                     )
 
                 if "パ" in scopes:
+
                     allowed_teams.extend(
                         pacific
                     )
 
                 if not allowed_teams:
+
                     allowed_teams = (
                         central + pacific
                     )
 
-            # -----------------------------------------
+            # -------------------------------------------------
             # 投手・野手
-            # -----------------------------------------
+            # -------------------------------------------------
 
             if (
                 "全て" in scopes
@@ -786,30 +906,33 @@ def show_start_page():
                 allowed_roles = []
 
                 if "野手" in scopes:
+
                     allowed_roles.append(
                         "野手"
                     )
 
                 if "投手" in scopes:
+
                     allowed_roles.append(
                         "投手"
                     )
 
                 if not allowed_roles:
+
                     allowed_roles = [
                         "野手",
                         "投手"
                     ]
 
-            # -----------------------------------------
+            # -------------------------------------------------
             # 出題プール
-            # -----------------------------------------
+            # -------------------------------------------------
 
             pool = []
 
-            # -----------------------------------------
+            # -------------------------------------------------
             # 野手
-            # -----------------------------------------
+            # -------------------------------------------------
 
             if "野手" in allowed_roles:
 
@@ -840,9 +963,9 @@ def show_start_page():
 
                     pool.append(player)
 
-            # -----------------------------------------
+            # -------------------------------------------------
             # 投手
-            # -----------------------------------------
+            # -------------------------------------------------
 
             if "投手" in allowed_roles:
 
@@ -873,9 +996,9 @@ def show_start_page():
 
                     pool.append(player)
 
-            # -----------------------------------------
+            # -------------------------------------------------
             # 選手なし
-            # -----------------------------------------
+            # -------------------------------------------------
 
             if not pool:
 
@@ -918,22 +1041,6 @@ def show_start_page():
 
                 st.rerun()
 
-    st.markdown(
-        """
-        <div style='
-            background-color:#f9fafb;
-            padding:20px;
-            border-radius:8px;
-            color:#4b5563;
-            font-size:14px;
-            margin-top:20px;
-        '>
-        表示された成績から選手名を当てるクイズです。
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
 
 # =========================================================
 # クイズ画面
@@ -941,9 +1048,9 @@ def show_start_page():
 
 def show_quiz_page():
 
-    # -----------------------------------------
+    # -----------------------------------------------------
     # 中断
-    # -----------------------------------------
+    # -----------------------------------------------------
 
     if st.button(
         "← 中断してスタート画面に戻る"
@@ -953,9 +1060,9 @@ def show_quiz_page():
 
         st.rerun()
 
-    # -----------------------------------------
-    # データ取得
-    # -----------------------------------------
+    # -----------------------------------------------------
+    # 選手取得
+    # -----------------------------------------------------
 
     total_q = len(
         st.session_state.quiz_pool
@@ -971,17 +1078,17 @@ def show_quiz_page():
         ]
     )
 
-    # -----------------------------------------
+    # -----------------------------------------------------
     # 問題番号
-    # -----------------------------------------
+    # -----------------------------------------------------
 
     st.markdown(
         f"""
-        <h4 style='
+        <h4 style="
             text-align:center;
             color:#6b7280;
-        '>
-        第 {current_idx + 1} 問 / {total_q}問中
+        ">
+            第 {current_idx + 1} 問 / {total_q}問中
         </h4>
         """,
         unsafe_allow_html=True
@@ -989,8 +1096,8 @@ def show_quiz_page():
 
     st.markdown(
         """
-        <h2 class='title-text'
-            style='font-size:24px;'>
+        <h2 class="title-text"
+            style="font-size:24px;">
             ⚾ この成績の選手は誰？
         </h2>
         """,
@@ -1123,9 +1230,9 @@ def show_quiz_page():
                 f" 正解は「{player['選手名']}」でした。"
             )
 
-        # -----------------------------------------
+        # -------------------------------------------------
         # 次の問題
-        # -----------------------------------------
+        # -------------------------------------------------
 
         if current_idx + 1 < total_q:
 
@@ -1141,9 +1248,9 @@ def show_quiz_page():
 
                 st.rerun()
 
-        # -----------------------------------------
+        # -------------------------------------------------
         # 結果
-        # -----------------------------------------
+        # -------------------------------------------------
 
         else:
 
@@ -1179,12 +1286,12 @@ def show_result_page():
 
     st.markdown(
         f"""
-        <h2 style='text-align:center;'>
+        <h2 style="text-align:center;">
             {total_q}問中
-            <span style='
+            <span style="
                 color:#0d9488;
                 font-size:48px;
-            '>
+            ">
                 {score}
             </span>
             問正解！
