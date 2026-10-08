@@ -705,7 +705,7 @@ def show_start_page():
                 "野手の条件結びつき",
                 ["AND（すべて満たす）", "OR（いずれかを満たす）"],
                 horizontal=True,
-                key="filter_op_b"
+                key="filter_op_b",
                 index=1
             )
 
@@ -722,7 +722,7 @@ def show_start_page():
                 "投手の条件結びつき",
                 ["AND（すべて満たす）", "OR（いずれかを満たす）"],
                 horizontal=True,
-                key="filter_op_p"
+                key="filter_op_p",
                 index=1
             )
 
