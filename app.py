@@ -6,7 +6,7 @@ import unicodedata
 
 
 # =========================================================
-# 1. データ読み込み
+# データ読み込み
 # =========================================================
 
 @st.cache_data
@@ -14,33 +14,27 @@ def load_data():
     file_name = "baseball_data.xlsx"
 
     try:
-        dfs = pd.read_excel(file_name, sheet_name=None)
-
+        dfs = pd.read_excel(
+            file_name,
+            sheet_name=None
+        )
     except FileNotFoundError:
         st.error(
             f"🚨 【エラー】同じフォルダに `{file_name}` が見つかりません。"
-            "ファイル名や保存場所を確認してください。"
         )
         st.stop()
-
     except Exception as e:
-        st.error(f"🚨 【エラー】ファイルの読み込みに失敗しました: {e}")
+        st.error(
+            f"🚨 【エラー】ファイルの読み込みに失敗しました: {e}"
+        )
         st.stop()
-
-    # -----------------------------------------
-    # シート確認
-    # -----------------------------------------
 
     if "野手" not in dfs or "投手" not in dfs:
         st.error(
-            "🚨 【エラー】Excelファイル内に「野手」と「投手」の"
-            "シート（タブ）が揃っていません。"
+            "🚨 【エラー】Excelファイル内に"
+            "「野手」と「投手」のシートが必要です。"
         )
         st.stop()
-
-    # -----------------------------------------
-    # 必要な列
-    # -----------------------------------------
 
     required_batter = [
         "選手名",
@@ -68,45 +62,28 @@ def load_data():
     ]
 
     missing_b = [
-        col
-        for col in required_batter
+        col for col in required_batter
         if col not in dfs["野手"].columns
     ]
 
     missing_p = [
-        col
-        for col in required_pitcher
+        col for col in required_pitcher
         if col not in dfs["投手"].columns
     ]
 
-    error_msgs = []
-
     if missing_b:
-        error_msgs.append(
-            "「野手」シートに以下の列がありません: "
+        st.error(
+            "🚨 「野手」シートに以下の列がありません: "
             + ", ".join(missing_b)
         )
-
-    if missing_p:
-        error_msgs.append(
-            "「投手」シートに以下の列がありません: "
-            + ", ".join(missing_p)
-        )
-
-    if error_msgs:
-        for msg in error_msgs:
-            st.error(f"🚨 【エラー】{msg}")
-
-        st.info(
-            "💡 Excelの1行目（ヘッダー）の文字が、"
-            "必要な列名と完全に一致しているか確認してください。"
-        )
-
         st.stop()
 
-    # -----------------------------------------
-    # 数値化
-    # -----------------------------------------
+    if missing_p:
+        st.error(
+            "🚨 「投手」シートに以下の列がありません: "
+            + ", ".join(missing_p)
+        )
+        st.stop()
 
     batter_numeric = [
         "試合数",
@@ -138,10 +115,6 @@ def load_data():
             errors="coerce"
         ).fillna(0)
 
-    # -----------------------------------------
-    # 空欄処理
-    # -----------------------------------------
-
     for sheet in dfs:
         dfs[sheet] = dfs[sheet].fillna("-")
 
@@ -152,7 +125,56 @@ dfs = load_data()
 
 
 # =========================================================
-# 2. Session State
+# 全選手名
+# =========================================================
+
+def get_all_player_names():
+    names = []
+
+    for sheet_name in ["野手", "投手"]:
+        if sheet_name not in dfs:
+            continue
+
+        for name in dfs[sheet_name]["選手名"]:
+            name = str(name).strip()
+
+            if (
+                name
+                and name != "-"
+                and name not in names
+            ):
+                names.append(name)
+
+    return sorted(names)
+
+
+ALL_PLAYER_NAMES = get_all_player_names()
+
+
+# =========================================================
+# 名前正規化
+# =========================================================
+
+def normalize_name(text):
+    if text is None:
+        return ""
+
+    text = unicodedata.normalize(
+        "NFKC",
+        str(text)
+    )
+
+    text = re.sub(
+        r"\s+",
+        "",
+        text
+    )
+
+    return text.strip()
+
+
+# =========================================================
+# Session State
 # =========================================================
 
 if "current_page" not in st.session_state:
@@ -167,67 +189,28 @@ if "q_index" not in st.session_state:
 if "score" not in st.session_state:
     st.session_state.score = 0
 
-if "answer_text" not in st.session_state:
-    st.session_state.answer_text = ""
+if "is_answered" not in st.session_state:
+    st.session_state.is_answered = False
+
+if "is_correct" not in st.session_state:
+    st.session_state.is_correct = False
+
+if "hint_team" not in st.session_state:
+    st.session_state.hint_team = False
+
+if "selected_answer" not in st.session_state:
+    st.session_state.selected_answer = None
 
 
 def reset_question_state():
-    st.session_state.hint_team = False
     st.session_state.is_answered = False
     st.session_state.is_correct = False
-    st.session_state.answer_text = ""
-
-
-if "is_answered" not in st.session_state:
-    reset_question_state()
+    st.session_state.hint_team = False
+    st.session_state.selected_answer = None
 
 
 # =========================================================
-# 3. 名前の正規化
-# =========================================================
-
-def normalize_name(text):
-    if text is None:
-        return ""
-
-    text = unicodedata.normalize("NFKC", str(text))
-    text = re.sub(r"\s+", "", text)
-
-    return text.strip()
-
-
-# =========================================================
-# 4. 全選手名を取得
-# =========================================================
-
-def get_all_player_names():
-
-    all_names = []
-
-    for sheet_name in ["野手", "投手"]:
-
-        if sheet_name not in dfs:
-            continue
-
-        for name in dfs[sheet_name]["選手名"]:
-
-            name = str(name).strip()
-
-            if (
-                name
-                and name != "-"
-                and name not in all_names
-            ):
-                all_names.append(name)
-
-    return all_names
-
-
-ALL_PLAYER_NAMES = get_all_player_names()
-
-
-# =========================================================
-# 5. CSS
+# CSS
 # =========================================================
 
 st.markdown(
@@ -237,7 +220,6 @@ st.markdown(
     .title-text {
         text-align: center;
         color: #1f2937;
-        margin-bottom: 0px;
         font-weight: 800;
         font-size: 32px;
     }
@@ -246,14 +228,6 @@ st.markdown(
         text-align: center;
         color: #6b7280;
         font-size: 14px;
-    }
-
-    .link-text {
-        text-align: center;
-        color: #0d9488;
-        font-size: 14px;
-        cursor: pointer;
-        margin-bottom: 20px;
     }
 
     .section-title {
@@ -270,49 +244,19 @@ st.markdown(
         margin-bottom: 15px;
     }
 
-    /* -------------------------------------
-       メインボタン
-    ------------------------------------- */
-
     button[kind="primary"] {
         background-color: #0d9488 !important;
         color: white !important;
-        height: 50px;
-        font-size: 18px;
-        font-weight: bold;
         border: none !important;
-        border-radius: 8px;
+        font-weight: bold !important;
     }
 
     button[kind="primary"]:hover {
         background-color: #0f766e !important;
     }
 
-    /* -------------------------------------
-       検索候補
-       画像のようなドロップダウン風
-    ------------------------------------- */
-
-    div[data-testid="stVerticalBlock"] .candidate-button button {
-        text-align: left !important;
-        justify-content: flex-start !important;
-        background: white !important;
-        border: none !important;
-        border-radius: 0 !important;
-        color: #1f2937 !important;
-        font-size: 17px !important;
-        min-height: 48px !important;
-        padding-left: 18px !important;
-        box-shadow: none !important;
-    }
-
-    div[data-testid="stVerticalBlock"] .candidate-button button:hover {
-        background: #f1f5f9 !important;
-    }
-
-    /* 候補部分の上の余白を小さく */
-    .candidate-box {
-        margin-top: -8px;
+    div[data-baseweb="select"] {
+        border-radius: 10px;
     }
 
     </style>
@@ -322,7 +266,7 @@ st.markdown(
 
 
 # =========================================================
-# 6. スタート画面
+# スタート画面
 # =========================================================
 
 def show_start_page():
@@ -337,10 +281,7 @@ def show_start_page():
         unsafe_allow_html=True
     )
 
-    st.markdown(
-        "<p class='link-text'>ランキングを見る</p>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<br>", unsafe_allow_html=True)
 
     with st.container(border=True):
 
@@ -365,36 +306,31 @@ def show_start_page():
 
         st.markdown(
             "<div class='note-text'>"
-            "※選択したレギュレーションの対象選手で絞り込みます"
+            "※選択した条件の選手から出題されます"
             "</div>",
             unsafe_allow_html=True
         )
 
-        # -----------------------------------------
-        # フィルター
-        # -----------------------------------------
-
-        with st.expander("フィルター", expanded=False):
+        with st.expander(
+            "フィルター",
+            expanded=False
+        ):
 
             min_pa = st.number_input(
-                "最低打席数の制限",
+                "最低打席数",
                 min_value=0,
                 value=0,
                 step=50
             )
 
             min_ip = st.number_input(
-                "最低投球回数の制限",
+                "最低投球回数",
                 min_value=0.0,
                 value=0.0,
                 step=10.0
             )
 
         st.divider()
-
-        # -----------------------------------------
-        # 出題数
-        # -----------------------------------------
 
         st.markdown(
             "<div class='section-title'>出題数</div>",
@@ -415,10 +351,6 @@ def show_start_page():
         )
 
         st.markdown("<br>", unsafe_allow_html=True)
-
-        # -----------------------------------------
-        # クイズ開始
-        # -----------------------------------------
 
         if st.button(
             "クイズ開始",
@@ -444,59 +376,51 @@ def show_start_page():
                 "日本ハム"
             ]
 
-            scopes = selected_scopes if selected_scopes else []
-
-            # -----------------------------------------
-            # リーグ
-            # -----------------------------------------
-
-            is_all = (
-                "全て" in scopes
-                or len(scopes) == 0
+            scopes = (
+                selected_scopes
+                if selected_scopes
+                else []
             )
 
-            allowed_leagues = []
+            # -----------------------------
+            # リーグ
+            # -----------------------------
 
-            if is_all:
-
-                allowed_leagues = (
+            if (
+                "全て" in scopes
+                or len(scopes) == 0
+            ):
+                allowed_teams = (
                     central + pacific
                 )
-
             else:
+                allowed_teams = []
 
                 if "セ" in scopes:
-                    allowed_leagues.extend(
-                        central
-                    )
+                    allowed_teams.extend(central)
 
                 if "パ" in scopes:
-                    allowed_leagues.extend(
-                        pacific
-                    )
+                    allowed_teams.extend(pacific)
 
-                if (
-                    "セ" not in scopes
-                    and "パ" not in scopes
-                ):
-                    allowed_leagues = (
+                if not allowed_teams:
+                    allowed_teams = (
                         central + pacific
                     )
 
-            # -----------------------------------------
+            # -----------------------------
             # 投手・野手
-            # -----------------------------------------
+            # -----------------------------
 
-            allowed_roles = []
-
-            if is_all:
-
+            if (
+                "全て" in scopes
+                or len(scopes) == 0
+            ):
                 allowed_roles = [
                     "野手",
                     "投手"
                 ]
-
             else:
+                allowed_roles = []
 
                 if "野手" in scopes:
                     allowed_roles.append("野手")
@@ -504,18 +428,15 @@ def show_start_page():
                 if "投手" in scopes:
                     allowed_roles.append("投手")
 
-                if (
-                    "野手" not in scopes
-                    and "投手" not in scopes
-                ):
+                if not allowed_roles:
                     allowed_roles = [
                         "野手",
                         "投手"
                     ]
 
-            # -----------------------------------------
+            # -----------------------------
             # 出題プール
-            # -----------------------------------------
+            # -----------------------------
 
             pool = []
 
@@ -530,19 +451,23 @@ def show_start_page():
                 ).fillna(0)
 
                 filtered_b = b_df[
-                    (b_df["球団"].isin(
-                        allowed_leagues
-                    ))
+                    (
+                        b_df["球団"].isin(
+                            allowed_teams
+                        )
+                    )
                     &
-                    (b_df["打席数"] >= min_pa)
+                    (
+                        b_df["打席数"] >= min_pa
+                    )
                 ]
 
                 for _, row in filtered_b.iterrows():
 
-                    d = row.to_dict()
-                    d["type"] = "野手"
+                    player = row.to_dict()
+                    player["type"] = "野手"
 
-                    pool.append(d)
+                    pool.append(player)
 
             # 投手
             if "投手" in allowed_roles:
@@ -555,42 +480,37 @@ def show_start_page():
                 ).fillna(0)
 
                 filtered_p = p_df[
-                    (p_df["球団"].isin(
-                        allowed_leagues
-                    ))
+                    (
+                        p_df["球団"].isin(
+                            allowed_teams
+                        )
+                    )
                     &
-                    (p_df["投球回"] >= min_ip)
+                    (
+                        p_df["投球回"] >= min_ip
+                    )
                 ]
 
                 for _, row in filtered_p.iterrows():
 
-                    d = row.to_dict()
-                    d["type"] = "投手"
+                    player = row.to_dict()
+                    player["type"] = "投手"
 
-                    pool.append(d)
+                    pool.append(player)
 
-            # -----------------------------------------
-            # 出題可能チェック
-            # -----------------------------------------
-
-            if len(pool) == 0:
-
+            if not pool:
                 st.error(
-                    "条件に合う選手がいません！"
+                    "条件に合う選手がいません。"
                     "フィルターを緩めてください。"
                 )
-
             else:
 
                 random.shuffle(pool)
 
                 if q_count_str == "エンドレス":
-
-                    max_q = len(pool)
-
+                    question_count = len(pool)
                 else:
-
-                    max_q = min(
+                    question_count = min(
                         int(
                             q_count_str.replace(
                                 "問",
@@ -601,11 +521,11 @@ def show_start_page():
                     )
 
                 st.session_state.quiz_pool = (
-                    pool[:max_q]
+                    pool[:question_count]
                 )
 
-                st.session_state.score = 0
                 st.session_state.q_index = 0
+                st.session_state.score = 0
 
                 reset_question_state()
 
@@ -623,8 +543,7 @@ def show_start_page():
             font-size: 14px;
             margin-top: 20px;
         '>
-        成績クイズは、表示された成績の数字から選手名を当てるクイズです。
-        打席数や投球回数のフィルターを活用して難易度を調整できます。
+        表示された成績から選手名を当てるクイズです。
         </div>
         """,
         unsafe_allow_html=True
@@ -632,25 +551,16 @@ def show_start_page():
 
 
 # =========================================================
-# 7. クイズ画面
+# クイズ画面
 # =========================================================
 
 def show_quiz_page():
 
-    # -----------------------------------------
-    # 中断
-    # -----------------------------------------
-
     if st.button(
         "← 中断してスタート画面に戻る"
     ):
-
         st.session_state.current_page = "start"
         st.rerun()
-
-    # -----------------------------------------
-    # 問題情報
-    # -----------------------------------------
 
     total_q = len(
         st.session_state.quiz_pool
@@ -669,10 +579,10 @@ def show_quiz_page():
     st.markdown(
         f"""
         <h4 style='
-            text-align: center;
-            color: #6b7280;
+            text-align:center;
+            color:#6b7280;
         '>
-            第 {current_idx + 1} 問 / {total_q}問中
+        第 {current_idx + 1} 問 / {total_q}問中
         </h4>
         """,
         unsafe_allow_html=True
@@ -681,10 +591,7 @@ def show_quiz_page():
     st.markdown(
         """
         <h2 class='title-text'
-            style='
-                font-size: 24px;
-                margin-bottom: 20px;
-            '>
+            style='font-size:24px;'>
             ⚾ この成績の選手は誰？
         </h2>
         """,
@@ -692,32 +599,29 @@ def show_quiz_page():
     )
 
     # =====================================================
-    # 成績
+    # 成績表示
     # =====================================================
 
     with st.container(border=True):
 
-        # -----------------------------------------
         # 野手
-        # -----------------------------------------
-
         if player["type"] == "野手":
 
             c1, c2, c3, c4 = st.columns(4)
 
             c1.metric(
                 "試合数",
-                f"{player['試合数']}"
+                player["試合数"]
             )
 
             c2.metric(
                 "打席数",
-                f"{player['打席数']}"
+                player["打席数"]
             )
 
             c3.metric(
                 "打率",
-                f"{player['打率']}"
+                player["打率"]
             )
 
             c4.metric(
@@ -729,62 +633,59 @@ def show_quiz_page():
 
             c5.metric(
                 "打点",
-                f"{player['打点']}"
+                player["打点"]
             )
 
             c6.metric(
                 "盗塁",
-                f"{player['盗塁']}"
+                player["盗塁"]
             )
 
             c7.metric(
                 "OPS",
-                f"{player['OPS']}"
+                player["OPS"]
             )
 
-        # -----------------------------------------
         # 投手
-        # -----------------------------------------
-
         else:
 
             c1, c2, c3, c4 = st.columns(4)
 
             c1.metric(
                 "登板数",
-                f"{player['登板数']}"
+                player["登板数"]
             )
 
             c2.metric(
                 "防御率",
-                f"{player['防御率']}"
+                player["防御率"]
             )
 
             c3.metric(
                 "勝利",
-                f"{player['勝利']}"
+                player["勝利"]
             )
 
             c4.metric(
                 "敗北",
-                f"{player['敗北']}"
+                player["敗北"]
             )
 
             c5, c6, c7 = st.columns(3)
 
             c5.metric(
                 "セーブ",
-                f"{player['セーブ']}"
+                player["セーブ"]
             )
 
             c6.metric(
                 "HP",
-                f"{player['HP']}"
+                player["HP"]
             )
 
             c7.metric(
                 "奪三振",
-                f"{player['奪三振']}"
+                player["奪三振"]
             )
 
     # =====================================================
@@ -797,11 +698,9 @@ def show_quiz_page():
         "所属球団を見る",
         use_container_width=True
     ):
-
         st.session_state.hint_team = True
 
     if st.session_state.hint_team:
-
         st.info(
             f"所属球団：{player['球団']}"
         )
@@ -809,99 +708,24 @@ def show_quiz_page():
     st.markdown("---")
 
     # =====================================================
-    # 名前入力
+    # 選手名検索
+    #
+    # 全選手を候補として使用
     # =====================================================
 
-    answer_key = (
-        f"answer_{current_idx}"
+    st.markdown(
+        "#### 選手名"
     )
 
-    answer_input = st.text_input(
-        "選手名を入力",
-        key=answer_key,
+    selected_player = st.selectbox(
+        "選手名を検索",
+        options=ALL_PLAYER_NAMES,
+        index=None,
         placeholder="選手名を入力してください",
+        key=f"player_search_{current_idx}",
+        label_visibility="collapsed",
         disabled=st.session_state.is_answered
     )
-
-    # =====================================================
-    # オートコンプリート候補
-    # =====================================================
-
-    if (
-        answer_input
-        and not st.session_state.is_answered
-    ):
-
-        normalized_input = normalize_name(
-            answer_input
-        )
-
-        candidates = []
-
-        for name in ALL_PLAYER_NAMES:
-
-            normalized_name = normalize_name(
-                name
-            )
-
-            if (
-                normalized_input
-                in normalized_name
-            ):
-
-                candidates.append(name)
-
-        # -----------------------------------------
-        # 候補表示
-        # -----------------------------------------
-
-        if candidates:
-
-            # 最大10人
-            candidates = candidates[:10]
-
-            # 白い箱っぽく見せる
-            st.markdown(
-                """
-                <div style="
-                    border: 1px solid #d1d5db;
-                    border-radius: 0 0 12px 12px;
-                    background: white;
-                    margin-top: -10px;
-                    margin-bottom: 12px;
-                    overflow: hidden;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-                ">
-                """,
-                unsafe_allow_html=True
-            )
-
-            for i, candidate in enumerate(
-                candidates
-            ):
-
-                # Streamlitのボタンを
-                # 候補一覧っぽく表示
-                if st.button(
-                    candidate,
-                    key=(
-                        f"candidate_"
-                        f"{current_idx}_"
-                        f"{i}"
-                    ),
-                    use_container_width=True
-                ):
-
-                    st.session_state[
-                        answer_key
-                    ] = candidate
-
-                    st.rerun()
-
-            st.markdown(
-                "</div>",
-                unsafe_allow_html=True
-            )
 
     # =====================================================
     # 解答
@@ -909,15 +733,11 @@ def show_quiz_page():
 
     if not st.session_state.is_answered:
 
-        ans_col, skip_col = st.columns(
+        answer_col, skip_col = st.columns(
             [3, 1]
         )
 
-        # -----------------------------------------
-        # 解答ボタン
-        # -----------------------------------------
-
-        with ans_col:
+        with answer_col:
 
             if st.button(
                 "解答",
@@ -925,33 +745,34 @@ def show_quiz_page():
                 use_container_width=True
             ):
 
-                clean_input = normalize_name(
-                    answer_input
-                )
+                if selected_player is None:
 
-                correct_name = normalize_name(
-                    player["選手名"]
-                )
-
-                if (
-                    clean_input
-                    == correct_name
-                ):
-
-                    st.session_state.is_correct = True
-                    st.session_state.score += 1
+                    st.warning(
+                        "選手名を検索して選択してください。"
+                    )
 
                 else:
 
-                    st.session_state.is_correct = False
+                    input_name = normalize_name(
+                        selected_player
+                    )
 
-                st.session_state.is_answered = True
+                    correct_name = normalize_name(
+                        player["選手名"]
+                    )
 
-                st.rerun()
+                    if input_name == correct_name:
 
-        # -----------------------------------------
-        # 分からない
-        # -----------------------------------------
+                        st.session_state.is_correct = True
+                        st.session_state.score += 1
+
+                    else:
+
+                        st.session_state.is_correct = False
+
+                    st.session_state.is_answered = True
+
+                    st.rerun()
 
         with skip_col:
 
@@ -989,10 +810,7 @@ def show_quiz_page():
         # 次の問題
         # -----------------------------------------
 
-        if (
-            current_idx + 1
-            < total_q
-        ):
+        if current_idx + 1 < total_q:
 
             if st.button(
                 "次の問題へ ➡",
@@ -1024,7 +842,7 @@ def show_quiz_page():
 
 
 # =========================================================
-# 8. 結果画面
+# 結果画面
 # =========================================================
 
 def show_result_page():
@@ -1044,11 +862,11 @@ def show_result_page():
 
     st.markdown(
         f"""
-        <h2 style='text-align: center;'>
+        <h2 style='text-align:center;'>
             {total_q}問中
             <span style='
-                color: #0d9488;
-                font-size: 48px;
+                color:#0d9488;
+                font-size:48px;
             '>
                 {score}
             </span>
@@ -1074,7 +892,7 @@ def show_result_page():
 
 
 # =========================================================
-# 9. 画面ルーティング
+# 画面ルーティング
 # =========================================================
 
 if st.session_state.current_page == "start":
