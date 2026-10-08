@@ -697,15 +697,16 @@ def show_start_page():
             st.markdown("**【野手】**")
             col_b1, col_b2 = st.columns(2)
             with col_b1:
-                min_pa = st.number_input("最低打席数", min_value=0, value=0, step=50)
+                min_pa = st.number_input("最低打席数", min_value=0, value=350, step=10)
             with col_b2:
-                min_games_b = st.number_input("最低試合数", min_value=0, value=0, step=10)
+                min_games_b = st.number_input("最低試合数", min_value=0, value=50, step=1)
             
             filter_op_b = st.radio(
                 "野手の条件結びつき",
                 ["AND（すべて満たす）", "OR（いずれかを満たす）"],
                 horizontal=True,
                 key="filter_op_b"
+                index=1
             )
 
             st.divider()
@@ -713,15 +714,16 @@ def show_start_page():
             st.markdown("**【投手】**")
             col_p1, col_p2 = st.columns(2)
             with col_p1:
-                min_ip = st.number_input("最低投球回数", min_value=0.0, value=0.0, step=10.0)
+                min_ip = st.number_input("最低投球回数", min_value=0.0, value=80.0, step=10.0)
             with col_p2:
-                min_games_p = st.number_input("最低登板数", min_value=0, value=0, step=5)
+                min_games_p = st.number_input("最低登板数", min_value=0, value=15, step=1)
             
             filter_op_p = st.radio(
                 "投手の条件結びつき",
                 ["AND（すべて満たす）", "OR（いずれかを満たす）"],
                 horizontal=True,
                 key="filter_op_p"
+                index=1
             )
 
         st.divider()
