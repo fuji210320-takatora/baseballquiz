@@ -487,7 +487,7 @@ def show_start_page():
                 with h_col1:
                     is_on = st.checkbox(f"「{ht}」を使用", value=True)
                 with h_col2:
-                    limit = st.number_input(f"{ht}上限回数", min_value=1, max_value=1000, value=0, step=1, label_visibility="collapsed")
+                    limit = st.number_input(f"{ht}上限回数", min_value=1, max_value=1000, value=1, step=1, label_visibility="collapsed")
                 hint_config[ht] = {"is_on": is_on, "limit": limit}
 
         st.divider()
