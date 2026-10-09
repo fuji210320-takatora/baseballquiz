@@ -482,10 +482,14 @@ def show_start_page():
             hint_types = ["球団", "生年月日", "年数", "年俸", "投打", "出身", "背番号"]
             hint_config = {}
             
+            # 初期設定でオンにするヒントのリスト
+            default_on_hints = ["球団", "年数", "背番号"]
+            
             for ht in hint_types:
                 h_col1, h_col2 = st.columns([1, 1])
                 with h_col1:
-                    is_on = st.checkbox(f"「{ht}」を使用", value=True)
+                    # default_on_hintsに含まれていればTrue、それ以外はFalse
+                    is_on = st.checkbox(f"「{ht}」を使用", value=(ht in default_on_hints))
                 with h_col2:
                     limit = st.number_input(f"{ht}上限回数", min_value=1, max_value=1000, value=1, step=1, label_visibility="collapsed")
                 hint_config[ht] = {"is_on": is_on, "limit": limit}
