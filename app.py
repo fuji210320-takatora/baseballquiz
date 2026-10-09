@@ -92,9 +92,13 @@ def load_data():
     # =====================================================
     for sheet in ["野手", "投手", "基本データ"]:
         if sheet in dfs and "選手名" in dfs[sheet].columns:
-            # 確実を期すため、半角スペースと全角スペースを明示的に消去
-            dfs[sheet]["選手名"] = dfs[sheet]["選手名"].astype(str).apply(
-                lambda x: x.replace(" ", "").replace(" ", "").strip()
+            # Pandas標準の文字列メソッド(.str)を使って、全角・半角スペースを確実に消去
+            dfs[sheet]["選手名"] = (
+                dfs[sheet]["選手名"]
+                .astype(str)
+                .str.replace(" ", "", regex=False)   # 半角スペースを削除
+                .str.replace(" ", "", regex=False)  # 全角スペースを削除
+                .str.strip()
             )
 
     # =====================================================
