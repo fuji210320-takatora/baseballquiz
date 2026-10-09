@@ -7,6 +7,18 @@ import unicodedata
 
 
 # =========================================================
+# 名前正規化（データ読み込み時に使うため一番上に移動）
+# =========================================================
+
+def normalize_name(text):
+    if pd.isna(text) or text is None:
+        return ""
+    text = unicodedata.normalize("NFKC", str(text))
+    text = re.sub(r"\s+", "", text)
+    return text.strip()
+
+
+# =========================================================
 # データ読み込み
 # =========================================================
 
@@ -88,18 +100,12 @@ def load_data():
         st.stop()
 
     # =====================================================
-    # 選手名の空白削除（全角・半角すべて強制削除）
+    # 選手名の空白削除（絶対に残さない最強の処理）
     # =====================================================
     for sheet in ["野手", "投手", "基本データ"]:
         if sheet in dfs and "選手名" in dfs[sheet].columns:
-            # Pandas標準の文字列メソッド(.str)を使って、全角・半角スペースを確実に消去
-            dfs[sheet]["選手名"] = (
-                dfs[sheet]["選手名"]
-                .astype(str)
-                .str.replace(" ", "", regex=False)   # 半角スペースを削除
-                .str.replace(" ", "", regex=False)  # 全角スペースを削除
-                .str.strip()
-            )
+            # normalize_name関数を適用して、全角半角や特殊スペースをすべて空文字に変換
+            dfs[sheet]["選手名"] = dfs[sheet]["選手名"].apply(normalize_name)
 
     # =====================================================
     # 基本データを成績シートにマージ（合体）する
@@ -153,18 +159,6 @@ def get_all_player_names():
 
 
 ALL_PLAYER_NAMES = get_all_player_names()
-
-
-# =========================================================
-# 名前正規化
-# =========================================================
-
-def normalize_name(text):
-    if text is None:
-        return ""
-    text = unicodedata.normalize("NFKC", str(text))
-    text = re.sub(r"\s+", "", text)
-    return text.strip()
 
 
 # =========================================================
