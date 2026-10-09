@@ -669,6 +669,16 @@ def show_quiz_page():
                 # 既にこの問題で開いているヒントの場合
                 if ht in st.session_state.opened_hints:
                     hint_value = player.get(ht, "-")
+                    
+                    # --- ここで表示フォーマットの整形 ---
+                    val_str = str(hint_value)
+                    if ht == "背番号":
+                        if val_str.endswith(".0"):
+                            hint_value = val_str[:-2]
+                    elif ht == "生年月日":
+                        if " 00:00:00" in val_str:
+                            hint_value = val_str.replace(" 00:00:00", "")
+                            
                     st.info(f"**{ht}**: {hint_value}")
                 else:
                     # まだ開いていない場合
